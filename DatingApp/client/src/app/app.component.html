@@ -1,0 +1,17 @@
+<h1>{{title}}</h1>
+<ul>
+    <li *ngFor="let user of users">
+        <span>{{user.id}}-{{user.userName}}</span>
+    </li>
+    <hr>
+    @for (user of users; track $index) {
+        <li>
+            <span>{{user.id}}-{{user.userName}}</span>
+        </li>    
+        }
+</ul>
+
+<button type="button" class="btn btn-primary"
+        tooltip="Vivamus sagittis lacus vel augue laoreet rutrum faucibus.">
+  Simple demo
+</button>
