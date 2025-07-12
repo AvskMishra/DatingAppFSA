@@ -5,15 +5,16 @@ using API.Entities;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using API.Interfaces;
 
 namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AccountController(DataContext context) : BaseApiController
+    public class AccountController(DataContext context, ITokenServices tokenServices) : BaseApiController
     {
         [HttpPost("register")]
-        public async Task<ActionResult<AppUser>> Register(RegisterDto registerDto)
+        public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
         {
             if (await EmailExist(registerDto.Email)) return BadRequest("Email already Taken");
 
@@ -27,12 +28,17 @@ namespace API.Controllers
             };
             context.Users.Add(user);
             await context.SaveChangesAsync();
-            return Ok(user);
-
+            return new UserDto
+            {
+                Id = user.Id.ToString(),
+                DisplayName = user.UserName,
+                Email = user.Email!,
+                Token = tokenServices.CreateToken(user)
+            };
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<AppUser>> Login(LoginDto loginDto)
+        public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
             var user = await context.Users.SingleOrDefaultAsync(x => x.Email == loginDto.Email);
             if (user is null) return Unauthorized("Invalid Email");
@@ -42,7 +48,13 @@ namespace API.Controllers
             {
                 if (computeHash[i] != user.PasswordHash[i]) return Unauthorized("Invalid Password");
             }
-            return Ok(user);
+            return new UserDto
+            {
+                Id = user.Id.ToString(),
+                DisplayName = user.UserName,
+                Email = user.Email!,
+                Token = tokenServices.CreateToken(user)
+            };
         }
 
         private async Task<bool> EmailExist(string email)
